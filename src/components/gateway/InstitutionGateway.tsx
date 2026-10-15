@@ -18,8 +18,12 @@ import {
   ExternalLink,
   Briefcase,
   GraduationCap,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { InstitutionRegistrationModal } from './InstitutionRegistrationModal';
+import { authService } from '@/lib/supabase/services/authService';
+import { isSupabaseConfigured } from '@/lib/supabase';
 
 interface Props {
   onEnterInstitutionWorkspace: (inst: Institution, role?: UserRole) => void;
@@ -34,6 +38,11 @@ export const InstitutionGateway: React.FC<Props> = ({
 
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [activeSignInModal, setActiveSignInModal] = useState<'institution' | 'member' | null>(null);
+
+  // Authentication Mode & Status
+  const [isDemoMode, setIsDemoMode] = useState(!isSupabaseConfigured());
+  const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Institution Login Form State
   const [instLoginId, setInstLoginId] = useState('AIA-2024');
@@ -53,33 +62,91 @@ export const InstitutionGateway: React.FC<Props> = ({
       i.type.toLowerCase().includes(searchTenantQuery.toLowerCase())
   );
 
-  const handleInstitutionLoginSubmit = (e: React.FormEvent) => {
+  const handleInstitutionLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const matched = institutions.find(
-      (i) => i.code.toLowerCase() === instLoginId.toLowerCase() || i.slug.toLowerCase() === instLoginId.toLowerCase()
-    );
+    setAuthError(null);
 
-    if (matched) {
-      if (matched.status !== 'Active') {
+    // DEMO MODE QUICK LOGIN
+    if (isDemoMode) {
+      const matched = institutions.find(
+        (i) => i.code.toLowerCase() === instLoginId.toLowerCase() || i.slug.toLowerCase() === instLoginId.toLowerCase()
+      ) || institutions.find((i) => i.status === 'Active') || institutions[0];
+
+      if (matched && matched.status !== 'Active') {
         alert(`This institution is currently '${matched.status}'. Only Super Admin approved institutions can sign in.`);
         return;
       }
-      setCurrentInstitution(matched);
-      onEnterInstitutionWorkspace(matched, 'institution_admin');
-    } else {
-      // Default to first active institution
-      const activeInst = institutions.find((i) => i.status === 'Active') || institutions[0];
-      setCurrentInstitution(activeInst);
-      onEnterInstitutionWorkspace(activeInst, 'institution_admin');
+      if (matched) setCurrentInstitution(matched);
+      onEnterInstitutionWorkspace(matched || institutions[0], 'institution_admin');
+      setActiveSignInModal(null);
+      return;
+    }
+
+    // LIVE SUPABASE AUTHENTICATION
+    setIsLoading(true);
+    try {
+      const authData = await authService.signIn(instEmail, instPassword);
+      if (authData.user) {
+        const profile = await authService.fetchUserProfile(authData.user.id);
+        let matched = institutions.find((i) => i.id === profile?.institutionId);
+        if (!matched) {
+          matched = institutions.find(
+            (i) => i.code.toLowerCase() === instLoginId.toLowerCase() || i.slug.toLowerCase() === instLoginId.toLowerCase()
+          ) || institutions.find((i) => i.status === 'Active') || institutions[0];
+        }
+
+        if (matched && matched.status !== 'Active') {
+          setAuthError(`Institution is currently '${matched.status}'. Super Admin authorization required.`);
+          setIsLoading(false);
+          return;
+        }
+
+        if (matched) setCurrentInstitution(matched);
+        onEnterInstitutionWorkspace(matched || institutions[0], (profile?.role as UserRole) || 'institution_admin');
+        setActiveSignInModal(null);
+      }
+    } catch (err: any) {
+      console.error('Supabase admin login error:', err);
+      setAuthError(err.message || 'Invalid administrator login credentials. Make sure user exists in Supabase Auth.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleMemberLoginSubmit = (e: React.FormEvent) => {
+  const handleMemberLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Default to student or matching user
-    const inst = institutions.find((i) => i.status === 'Active') || institutions[0];
-    setCurrentInstitution(inst);
-    onEnterInstitutionWorkspace(inst, 'student');
+    setAuthError(null);
+
+    // DEMO MODE QUICK LOGIN
+    if (isDemoMode) {
+      const inst = institutions.find((i) => i.status === 'Active') || institutions[0];
+      setCurrentInstitution(inst);
+      onEnterInstitutionWorkspace(inst, 'student');
+      setActiveSignInModal(null);
+      return;
+    }
+
+    // LIVE SUPABASE AUTHENTICATION
+    setIsLoading(true);
+    try {
+      const authData = await authService.signIn(memberEmail, memberPassword);
+      if (authData.user) {
+        const profile = await authService.fetchUserProfile(authData.user.id);
+        let matched = institutions.find((i) => i.id === profile?.institutionId);
+        if (!matched) {
+          matched = institutions.find((i) => i.status === 'Active') || institutions[0];
+        }
+
+        if (matched) setCurrentInstitution(matched);
+        onEnterInstitutionWorkspace(matched || institutions[0], (profile?.role as UserRole) || 'student');
+        setActiveSignInModal(null);
+      }
+    } catch (err: any) {
+      console.error('Supabase member login error:', err);
+      setAuthError(err.message || 'Invalid member credentials. Make sure user exists in Supabase Auth.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -314,7 +381,10 @@ export const InstitutionGateway: React.FC<Props> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs animate-in fade-in">
           <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-800 p-6 shadow-2xl relative text-slate-100">
             <button
-              onClick={() => setActiveSignInModal(null)}
+              onClick={() => {
+                setActiveSignInModal(null);
+                setAuthError(null);
+              }}
               className="absolute right-4 top-4 rounded-full p-1 text-slate-400 hover:bg-slate-800"
             >
               ✕
@@ -323,9 +393,49 @@ export const InstitutionGateway: React.FC<Props> = ({
             <h3 className="text-base font-bold text-white mb-1">
               Institution Administrator Sign In
             </h3>
-            <p className="text-xs text-slate-400 mb-4">
+            <p className="text-xs text-slate-400 mb-3">
               Enter your authorized organization identifier and admin credentials.
             </p>
+
+            {/* Mode Switcher Banner */}
+            <div className="flex items-center justify-between rounded-xl bg-slate-800/90 p-2.5 mb-3 border border-slate-700/70">
+              <div className="flex items-center gap-2">
+                <span className={`h-2.5 w-2.5 rounded-full ${isDemoMode ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}`} />
+                <span className="text-[11px] font-medium text-slate-200">
+                  {isDemoMode ? 'Demo Quick Login (Skip Password)' : 'Live Supabase Auth Active'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDemoMode(!isDemoMode);
+                  setAuthError(null);
+                }}
+                className="text-[11px] font-semibold text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
+              >
+                Switch to {isDemoMode ? 'Supabase Auth' : 'Demo Mode'}
+              </button>
+            </div>
+
+            {/* Error Banner */}
+            {authError && (
+              <div className="mb-3 rounded-xl bg-rose-500/15 border border-rose-500/30 p-2.5 text-xs text-rose-200 flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-rose-300">{authError}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDemoMode(true);
+                      setAuthError(null);
+                    }}
+                    className="text-[11px] text-cyan-300 hover:text-cyan-200 underline font-semibold block"
+                  >
+                    Switch to Demo Mode to test immediately →
+                  </button>
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handleInstitutionLoginSubmit} className="space-y-3 text-xs">
               <div>
@@ -358,6 +468,7 @@ export const InstitutionGateway: React.FC<Props> = ({
                   required
                   value={instPassword}
                   onChange={(e) => setInstPassword(e.target.value)}
+                  placeholder={isDemoMode ? 'Any password in demo mode' : 'Supabase account password'}
                   className="w-full rounded-xl border border-slate-700 bg-slate-800 p-2.5 text-xs text-white"
                 />
               </div>
@@ -365,16 +476,27 @@ export const InstitutionGateway: React.FC<Props> = ({
               <div className="pt-3 flex justify-end gap-2 border-t border-slate-800">
                 <button
                   type="button"
-                  onClick={() => setActiveSignInModal(null)}
+                  onClick={() => {
+                    setActiveSignInModal(null);
+                    setAuthError(null);
+                  }}
                   className="rounded-xl bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2 text-xs font-bold text-white shadow-sm"
+                  disabled={isLoading}
+                  className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 px-5 py-2 text-xs font-bold text-white shadow-sm transition"
                 >
-                  Access Dashboard
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>Authenticating...</span>
+                    </>
+                  ) : (
+                    <span>{isDemoMode ? 'Access Dashboard (Demo)' : 'Access Dashboard'}</span>
+                  )}
                 </button>
               </div>
             </form>
@@ -387,7 +509,10 @@ export const InstitutionGateway: React.FC<Props> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs animate-in fade-in">
           <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-800 p-6 shadow-2xl relative text-slate-100">
             <button
-              onClick={() => setActiveSignInModal(null)}
+              onClick={() => {
+                setActiveSignInModal(null);
+                setAuthError(null);
+              }}
               className="absolute right-4 top-4 rounded-full p-1 text-slate-400 hover:bg-slate-800"
             >
               ✕
@@ -396,9 +521,49 @@ export const InstitutionGateway: React.FC<Props> = ({
             <h3 className="text-base font-bold text-white mb-1">
               Authorized Member Sign In
             </h3>
-            <p className="text-xs text-slate-400 mb-4">
+            <p className="text-xs text-slate-400 mb-3">
               For faculty, students, corporate staff, and government officers.
             </p>
+
+            {/* Mode Switcher Banner */}
+            <div className="flex items-center justify-between rounded-xl bg-slate-800/90 p-2.5 mb-3 border border-slate-700/70">
+              <div className="flex items-center gap-2">
+                <span className={`h-2.5 w-2.5 rounded-full ${isDemoMode ? 'bg-amber-400' : 'bg-indigo-400 animate-pulse'}`} />
+                <span className="text-[11px] font-medium text-slate-200">
+                  {isDemoMode ? 'Demo Quick Login (Skip Password)' : 'Live Supabase Auth Active'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDemoMode(!isDemoMode);
+                  setAuthError(null);
+                }}
+                className="text-[11px] font-semibold text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
+              >
+                Switch to {isDemoMode ? 'Supabase Auth' : 'Demo Mode'}
+              </button>
+            </div>
+
+            {/* Error Banner */}
+            {authError && (
+              <div className="mb-3 rounded-xl bg-rose-500/15 border border-rose-500/30 p-2.5 text-xs text-rose-200 flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-rose-300">{authError}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDemoMode(true);
+                      setAuthError(null);
+                    }}
+                    className="text-[11px] text-cyan-300 hover:text-cyan-200 underline font-semibold block"
+                  >
+                    Switch to Demo Mode to test immediately →
+                  </button>
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handleMemberLoginSubmit} className="space-y-3 text-xs">
               <div>
@@ -419,6 +584,7 @@ export const InstitutionGateway: React.FC<Props> = ({
                   required
                   value={memberPassword}
                   onChange={(e) => setMemberPassword(e.target.value)}
+                  placeholder={isDemoMode ? 'Any password in demo mode' : 'Supabase account password'}
                   className="w-full rounded-xl border border-slate-700 bg-slate-800 p-2.5 text-xs text-white"
                 />
               </div>
@@ -426,16 +592,27 @@ export const InstitutionGateway: React.FC<Props> = ({
               <div className="pt-3 flex justify-end gap-2 border-t border-slate-800">
                 <button
                   type="button"
-                  onClick={() => setActiveSignInModal(null)}
+                  onClick={() => {
+                    setActiveSignInModal(null);
+                    setAuthError(null);
+                  }}
                   className="rounded-xl bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-indigo-600 hover:bg-indigo-700 px-5 py-2 text-xs font-bold text-white shadow-sm"
+                  disabled={isLoading}
+                  className="flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 px-5 py-2 text-xs font-bold text-white shadow-sm transition"
                 >
-                  Sign In to Member Portal
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>Signing In...</span>
+                    </>
+                  ) : (
+                    <span>{isDemoMode ? 'Sign In to Portal (Demo)' : 'Sign In to Member Portal'}</span>
+                  )}
                 </button>
               </div>
             </form>

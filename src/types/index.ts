@@ -253,6 +253,8 @@ export interface TimetableSlot {
   isBreak?: boolean;
 }
 
+export type AttendanceStatus = 'Present' | 'Absent' | 'Late' | 'On Leave';
+
 export interface AttendanceRecord {
   id: string;
   studentId: string;
@@ -261,7 +263,7 @@ export interface AttendanceRecord {
   classId: string;
   subject?: string;
   date: string;
-  status: 'Present' | 'Absent' | 'Late' | 'On Leave';
+  status: AttendanceStatus;
   session: 'Morning' | 'Afternoon' | 'Full Day' | 'Lecture';
   markedBy: string;
   remarks?: string;

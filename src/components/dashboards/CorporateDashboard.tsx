@@ -27,6 +27,7 @@ export const CorporateDashboard: React.FC = () => {
     clockInEmployee,
     clockOutEmployee,
     payrollRecords,
+    processPayroll,
     holidays,
     leaveRequests,
   } = useStore();
@@ -298,7 +299,17 @@ export const CorporateDashboard: React.FC = () => {
                         {p.status}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3 px-4 text-right flex items-center justify-end gap-1.5">
+                      {p.status !== 'Paid' && (
+                        <button
+                          onClick={() => processPayroll(p.id)}
+                          className="rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-2.5 py-1 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer transition"
+                          title="Process payout and disburse to employee bank account"
+                        >
+                          <CheckCircle2 className="h-3 w-3" />
+                          <span>Disburse</span>
+                        </button>
+                      )}
                       <button
                         onClick={() => setSelectedPayslip(p)}
                         className="rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-2.5 py-1 text-xs font-semibold inline-flex items-center gap-1"

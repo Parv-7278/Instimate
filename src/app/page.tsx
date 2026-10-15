@@ -24,6 +24,7 @@ import { LeaveManagement } from '@/components/modules/LeaveManagement';
 import { LibraryModule } from '@/components/modules/LibraryModule';
 import { IntegrationsModule } from '@/components/integrations/IntegrationsModule';
 import { SettingsModule } from '@/components/settings/SettingsModule';
+import { EventRouteModule } from '@/components/eventroute/EventRouteModule';
 import { LandingPage } from '@/components/landing/LandingPage';
 import { GlobalSearchModal } from '@/components/layout/GlobalSearchModal';
 import { Globe, ShieldAlert, ArrowLeft, Building2 } from 'lucide-react';
@@ -190,6 +191,9 @@ function MainAppContent() {
 
       case 'settings':
         return <SettingsModule />;
+
+      case 'eventroute':
+        return <EventRouteModule />;
 
       default:
         if (isCorporate) return <CorporateDashboard />;

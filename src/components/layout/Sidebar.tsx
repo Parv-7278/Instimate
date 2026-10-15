@@ -17,6 +17,7 @@ import {
   BookMarked,
   ShieldCheck,
   ChevronRight,
+  Compass,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -37,6 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
   const navItems = isCorporate
     ? [
         { id: 'dashboard', label: 'Executive Workspace', icon: LayoutDashboard },
+        { id: 'eventroute', label: 'EventRoute Navigator', icon: Compass, badge: 'Live' },
         { id: 'students', label: 'Employee Directory', icon: Users },
         { id: 'attendance', label: 'Attendance & Shifts', icon: CalendarCheck },
         { id: 'finance', label: 'Payroll & Compensation', icon: CreditCard },
@@ -48,6 +50,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
     : isGovernment
     ? [
         { id: 'dashboard', label: 'Secretariat Dashboard', icon: LayoutDashboard },
+        { id: 'eventroute', label: 'EventRoute Navigator', icon: Compass, badge: 'Live' },
         { id: 'students', label: 'Officers & Personnel', icon: Users },
         { id: 'attendance', label: 'Duty Attendance', icon: CalendarCheck },
         { id: 'announcements', label: 'Gazettes & Circulars', icon: Megaphone },
@@ -58,6 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
       ]
     : [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'eventroute', label: 'EventRoute Navigator', icon: Compass, badge: 'Live' },
         { id: 'students', label: 'Admissions & Students', icon: Users, badge: 'New' },
         { id: 'faculty', label: 'Faculty & Teachers', icon: Users },
         { id: 'classes', label: 'Classes & Batches', icon: Layers },

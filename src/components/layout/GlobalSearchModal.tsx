@@ -10,7 +10,10 @@ import {
   Calendar,
   X,
   ChevronRight,
+  Compass,
+  MapPin,
 } from 'lucide-react';
+import { EVENT_SESSIONS, VENUE_ROOMS } from '@/lib/eventroute/seedData';
 
 interface GlobalSearchModalProps {
   isOpen: boolean;
@@ -64,6 +67,25 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
         (i) =>
           i.studentName.toLowerCase().includes(query.toLowerCase()) ||
           i.invoiceNumber.toLowerCase().includes(query.toLowerCase())
+      )
+    : [];
+
+  const matchedEvents = query.trim()
+    ? EVENT_SESSIONS.filter(
+        (e) =>
+          e.title.toLowerCase().includes(query.toLowerCase()) ||
+          e.speaker.name.toLowerCase().includes(query.toLowerCase()) ||
+          e.track.toLowerCase().includes(query.toLowerCase()) ||
+          e.tags.some((t) => t.toLowerCase().includes(query.toLowerCase()))
+      )
+    : [];
+
+  const matchedVenues = query.trim()
+    ? VENUE_ROOMS.filter(
+        (v) =>
+          v.name.toLowerCase().includes(query.toLowerCase()) ||
+          v.code.toLowerCase().includes(query.toLowerCase()) ||
+          v.description.toLowerCase().includes(query.toLowerCase())
       )
     : [];
 
@@ -173,9 +195,71 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                 </div>
               )}
 
-              {matchedStudents.length === 0 && matchedFaculty.length === 0 && matchedInvoices.length === 0 && (
-                <p className="text-center py-6 text-slate-400">No matching records found.</p>
+              {matchedEvents.length > 0 && (
+                <div>
+                  <p className="font-bold text-[10px] text-cyan-600 uppercase tracking-wider mb-1 flex items-center gap-1">
+                    <Compass className="h-3 w-3" />
+                    EventRoute Sessions
+                  </p>
+                  <div className="space-y-1">
+                    {matchedEvents.map((ev) => (
+                      <div
+                        key={ev.id}
+                        onClick={() => {
+                          onSelectTab('eventroute');
+                          onClose();
+                        }}
+                        className="flex items-center justify-between p-2 rounded-lg hover:bg-cyan-50 cursor-pointer transition border border-transparent hover:border-cyan-200"
+                      >
+                        <div>
+                          <p className="font-bold text-slate-900">{ev.title}</p>
+                          <p className="text-[10px] text-slate-500">
+                            {ev.startTime} • {ev.speaker.name} • {ev.venueName}
+                          </p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-cyan-500" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
+
+              {matchedVenues.length > 0 && (
+                <div>
+                  <p className="font-bold text-[10px] text-teal-600 uppercase tracking-wider mb-1 flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    EventRoute Venues & Halls
+                  </p>
+                  <div className="space-y-1">
+                    {matchedVenues.map((rm) => (
+                      <div
+                        key={rm.id}
+                        onClick={() => {
+                          onSelectTab('eventroute');
+                          onClose();
+                        }}
+                        className="flex items-center justify-between p-2 rounded-lg hover:bg-teal-50 cursor-pointer transition border border-transparent hover:border-teal-200"
+                      >
+                        <div>
+                          <p className="font-bold text-slate-900">{rm.name}</p>
+                          <p className="text-[10px] text-slate-500">
+                            {rm.code} • Floor {rm.floor} • Capacity {rm.capacity} • {rm.congestionStatus.toUpperCase()} CROWD
+                          </p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-teal-500" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {matchedStudents.length === 0 &&
+                matchedFaculty.length === 0 &&
+                matchedInvoices.length === 0 &&
+                matchedEvents.length === 0 &&
+                matchedVenues.length === 0 && (
+                  <p className="text-center py-6 text-slate-400">No matching records found.</p>
+                )}
             </>
           )}
         </div>

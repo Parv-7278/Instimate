@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node tests/multi_tenant_test.ts"
+    "test": "node tests/multi_tenant_test.ts && npx tsx tests/eventroute_test.ts && npx tsx tests/supabase_backend_test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",
@@ -29,5 +29,8 @@
     "eslint-config-next": "16.4.0",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }

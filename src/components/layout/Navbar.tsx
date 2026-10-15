@@ -15,6 +15,7 @@ import {
   Sparkles,
   Check,
   ArrowLeft,
+  Compass,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -47,6 +48,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onExitToGateway,
 }) => {
   const {
+    isSupabaseLive,
     currentUser,
     switchRole,
     institutions,
@@ -56,6 +58,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     markNotificationRead,
     clearAllNotifications,
     resetToDefaults,
+    signOut,
   } = useStore();
 
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
@@ -67,6 +70,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const topTabs = [
     { id: 'dashboard', label: 'Dashboard' },
+    { id: 'eventroute', label: 'EventRoute' },
     { id: 'students', label: 'Students' },
     { id: 'faculty', label: 'Teachers' },
     { id: 'classes', label: 'Classes' },
@@ -105,6 +109,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="hidden sm:inline-block rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold tracking-wider text-cyan-200 uppercase border border-white/15">
                   {currentInstitution.type}
                 </span>
+                {isSupabaseLive ? (
+                  <span className="hidden lg:inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-200 border border-emerald-400/30" title="Connected to Supabase PostgreSQL Database">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Supabase Live
+                  </span>
+                ) : (
+                  <span className="hidden lg:inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-medium text-amber-200 border border-amber-400/30" title="Running in local fallback mode. Configure Supabase keys in .env.local to activate cloud database">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                    Supabase Offline
+                  </span>
+                )}
               </div>
               <p className="text-[11px] text-teal-100/80 hidden md:block">
                 {currentInstitution.name}
@@ -138,6 +153,19 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Right Section: Quick Switchers, Alerts & Profile */}
         <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            onClick={() => setActiveTab('eventroute')}
+            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition border ${
+              activeTab === 'eventroute'
+                ? 'bg-cyan-400 text-slate-950 border-cyan-300 shadow-sm'
+                : 'bg-black/20 hover:bg-black/30 text-cyan-200 border-white/10'
+            }`}
+            title="Open EventRoute Navigator & Smart Itinerary"
+          >
+            <Compass className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">EventRoute</span>
+          </button>
+
           {onOpenSearch && (
             <button
               onClick={onOpenSearch}
@@ -391,6 +419,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                   >
                     <RefreshCw className="h-3.5 w-3.5" />
                     <span>Reset Demo Data</span>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setProfileMenuOpen(false);
+                      await signOut();
+                      if (onExitToGateway) onExitToGateway();
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 rounded-lg text-left"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    <span>Sign Out</span>
                   </button>
                 </div>
               </div>

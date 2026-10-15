@@ -1,18 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient, isSupabaseConfigured } from './supabase/client';
+import { getSupabaseAdmin, isSupabaseAdminConfigured } from './supabase/admin';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+export { isSupabaseConfigured, getSupabaseClient, isSupabaseAdminConfigured, getSupabaseAdmin };
 
-export const isSupabaseConfigured = () => {
-  return Boolean(
-    supabaseUrl &&
-    supabaseAnonKey &&
-    supabaseUrl !== 'https://your-project.supabase.co' &&
-    supabaseAnonKey !== 'your-anon-key'
-  );
-};
-
-// Create Supabase client if configured, otherwise provide safe fallback client
-export const supabase = isSupabaseConfigured()
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
+// Default client instance for backward compatibility
+export const supabase = getSupabaseClient();

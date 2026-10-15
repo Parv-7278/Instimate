@@ -127,6 +127,31 @@ tests/
 ### 👥 Role-Based Access Control
 13 distinct roles: `super_admin`, `institution_owner`, `institution_admin`, `principal`, `faculty`, `student`, `parent`, `accountant`, `hr_staff`, `corporate_employee`, `govt_officer`, `librarian`, `auditor`
 
+### 🧭 EventRoute — Event Navigation & Smart Itinerary
+- **AI-Powered Itinerary Planner**:
+  - 4-step onboarding wizard: Interest tracks (Coding, Gaming, Music, Entrepreneurship, Workshops, Security, Design, Robotics), experience level, pacing (Relaxed, Balanced, Intensive), and daily availability.
+  - Conflict-free schedule generation engine with zero session collisions, transit walking buffer computation, and automated meal/networking breaks.
+  - Export to standard calendar `.ICS` format or save to local profile.
+- **Interactive Venue Map & Crowd Density Heatmap**:
+  - SVG architectural floor plan covering 8 major halls, arenas, food court, and registration concourse.
+  - Live crowd density layer (Heatmap overlay) with radial gradients & pulsing indicators for Low (<45%), Moderate (45-79%), and Congested (>80%) foot-traffic.
+  - Real-time simulation toolbar to fluctuate foot-traffic telemetry.
+- **Indoor Pathfinding (A* & Dijkstra)**:
+  - Client-side and server-side shortest pathfinder between any two rooms/booths.
+  - Dynamic "Avoid Congested Corridors" mode with path weighting penalties.
+  - Turn-by-turn guidance with step-by-step instructions, walking distance in meters, and estimated walk duration in minutes.
+- **Proactive Smart Notifications / Alerts Drawer**:
+  - Floating toast alert and slide-over notification drawer with live countdowns.
+  - Dynamic departure warnings: e.g. "Starts in 12 mins • 3 mins walk from your location • Start heading over!".
+  - Interactive "Simulate My Current Location" switcher with automatic walk-time recalculation.
+  - One-click "Navigate Now" quick action that directly plots the path on the interactive floor plan.
+- **RESTful API Routes**:
+  - `GET /api/eventroute/events` — Query event sessions and venue halls
+  - `GET/POST /api/eventroute/preferences` — Persist user onboarding preferences
+  - `POST /api/eventroute/itinerary` — Server-side AI schedule generation
+  - `GET/POST /api/eventroute/density` — Real-time crowd density state & telemetry simulation
+  - `POST /api/eventroute/route` — Shortest indoor pathfinding calculations
+
 ---
 
 ## Prerequisites
@@ -193,17 +218,23 @@ cp .env.example .env.local
 A complete PostgreSQL schema with foreign keys, indexes, and Row-Level Security (RLS) policies is provided at:
 
 ```
-supabase/migrations/20240101000000_institution_hub_schema.sql
+supabase/migrations/20240102000000_full_supabase_backend.sql
+supabase/seed.sql
 ```
 
 To apply to your Supabase project:
 
 1. Open your [Supabase Dashboard](https://supabase.com/dashboard) → **SQL Editor**
-2. Paste the contents of `supabase/migrations/20240101000000_institution_hub_schema.sql`
-3. Click **Run**
-4. Add your Supabase URL and anon key to `.env.local`
+2. Paste the contents of `supabase/migrations/20240102000000_full_supabase_backend.sql` and click **Run**
+3. (Optional) Paste `supabase/seed.sql` and click **Run** to load initial sample data
+4. Add your Supabase project URL, Anon Key, and Service Role Key to `.env.local`:
+   ```bash
+   NEXT_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
+   SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
+   ```
+5. Check backend health at `/api/supabase/health` — the platform will automatically detect live PostgreSQL connection and show the **Supabase Live** badge in the navbar.
 
-The platform operates fully without a database using its reactive in-memory store — Supabase connectivity is entirely optional for development.
 
 ---
 

@@ -59,11 +59,23 @@ import {
   INITIAL_CIRCULARS,
   INITIAL_FILE_TRACKING,
 } from './seedData';
+import { isSupabaseConfigured, getSupabaseClient } from './supabase';
+import { authService } from './supabase/services/authService';
+import { institutionService } from './supabase/services/institutionService';
+import { studentService } from './supabase/services/studentService';
+import { attendanceService } from './supabase/services/attendanceService';
+import { corporateService } from './supabase/services/corporateService';
+import { governmentService } from './supabase/services/governmentService';
+import { financeService } from './supabase/services/financeService';
+import { timetableService } from './supabase/services/timetableService';
+import { classroomService } from './supabase/services/classroomService';
 
 interface StoreContextType {
+  isSupabaseLive: boolean;
   currentUser: UserProfile;
   setCurrentUser: (user: UserProfile) => void;
   switchRole: (role: UserRole) => void;
+  signOut: () => Promise<void>;
 
   // Institutions & Multi-tenancy
   institutions: Institution[];
@@ -84,6 +96,8 @@ interface StoreContextType {
   clockInEmployee: (employeeId: string, workMode: 'Office' | 'Remote' | 'Client Site') => void;
   clockOutEmployee: (recordId: string) => void;
   payrollRecords: PayrollRecord[];
+  processPayroll: (recordId: string, paymentRef?: string) => void;
+  addPayrollRecord: (record: Omit<PayrollRecord, 'id' | 'institutionId'>) => void;
   holidays: HolidayItem[];
   addHoliday: (holiday: Omit<HolidayItem, 'id' | 'institutionId'>) => void;
 
@@ -95,6 +109,8 @@ interface StoreContextType {
   moveFileDesk: (fileId: string, nextDesk: string, remarks: string) => void;
 
   // Academic Modules
+  subjects: string[];
+  addSubject: (subject: string) => void;
   students: Student[];
   addStudent: (student: Omit<Student, 'id' | 'studentId' | 'attendanceRate'>) => void;
   updateStudent: (id: string, updates: Partial<Student>) => void;
@@ -162,6 +178,7 @@ const LOCAL_STORAGE_KEY = 'universal_institution_hub_v2';
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSupabaseLive, setIsSupabaseLive] = useState(false);
 
   // Core States
   const [currentUser, setCurrentUser] = useState<UserProfile>(DEMO_USERS[0]);
@@ -198,6 +215,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [libraryBooks, setLibraryBooks] = useState<LibraryBook[]>(INITIAL_LIBRARY_BOOKS);
   const [supportTickets, setSupportTickets] = useState<SupportTicket[]>(INITIAL_TICKETS);
   const [integrations, setIntegrations] = useState<IntegrationConfig[]>(INITIAL_INTEGRATIONS);
+  const [subjects, setSubjects] = useState<string[]>([
+    'Mathematics',
+    'Physics',
+    'Chemistry',
+    'Biology',
+    'Computer Science',
+    'English',
+    'History',
+    'Commerce',
+  ]);
 
   // Load from localStorage
   useEffect(() => {
@@ -244,6 +271,111 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     setIsLoaded(true);
   }, []);
+
+  // Live Supabase Backend synchronization
+  useEffect(() => {
+    if (isSupabaseConfigured()) {
+      setIsSupabaseLive(true);
+      institutionService.getAll().then((liveInstitutions) => {
+        if (liveInstitutions && liveInstitutions.length > 0) {
+          setInstitutions(liveInstitutions);
+        }
+      }).catch((err) => {
+        console.warn('Supabase institutions sync warning:', err);
+      });
+    }
+  }, []);
+
+  // Supabase Auth session listener
+  useEffect(() => {
+    const supabase = getSupabaseClient();
+    if (!supabase) return;
+
+    // 1. Check existing session on load
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const profile = await authService.fetchUserProfile(session.user.id);
+        if (profile) {
+          setCurrentUser(profile);
+          if (profile.institutionId) {
+            const matchedInst = institutions.find((i) => i.id === profile.institutionId);
+            if (matchedInst) setCurrentInstitution(matchedInst);
+          }
+        }
+      }
+    }).catch((err) => {
+      console.warn('Supabase session load error:', err);
+    });
+
+    // 2. Listen to real-time auth changes (sign in, sign out, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          const profile = await authService.fetchUserProfile(session.user.id);
+          if (profile) {
+            setCurrentUser(profile);
+            if (profile.institutionId) {
+              const matchedInst = institutions.find((i) => i.id === profile.institutionId);
+              if (matchedInst) setCurrentInstitution(matchedInst);
+            }
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setCurrentUser(DEMO_USERS[0]);
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [institutions]);
+
+  // Synchronize institution modules with Supabase when currentInstitution changes
+  useEffect(() => {
+    if (!isSupabaseConfigured() || !currentInstitution?.id) return;
+
+    // 1. Classrooms & Room Capacities
+    classroomService.getByInstitution(currentInstitution.id).then((rooms) => {
+      if (rooms && rooms.length > 0) setClassrooms(rooms);
+    }).catch((err) => console.warn('Supabase classrooms sync warning:', err));
+
+    // 2. Attendance Records
+    attendanceService.getByInstitution(currentInstitution.id).then((records) => {
+      if (records && records.length > 0) setAttendance(records);
+    }).catch((err) => console.warn('Supabase attendance sync warning:', err));
+
+    // 3. Timetable Slots
+    timetableService.getByInstitution(currentInstitution.id).then((slots) => {
+      if (slots && slots.length > 0) setTimetable(slots);
+    }).catch((err) => console.warn('Supabase timetable sync warning:', err));
+
+    // 4. Invoices & Transactions
+    financeService.getInvoices(currentInstitution.id).then((invs) => {
+      if (invs && invs.length > 0) setInvoices(invs);
+    }).catch((err) => console.warn('Supabase invoices sync warning:', err));
+
+    financeService.getTransactions(currentInstitution.id).then((txs) => {
+      if (txs && txs.length > 0) setTransactions(txs);
+    }).catch((err) => console.warn('Supabase transactions sync warning:', err));
+
+    // 5. Corporate Staff, Clock & Payroll
+    corporateService.getStaff(currentInstitution.id).then((staff) => {
+      if (staff && staff.length > 0) setCorporateStaff(staff);
+    }).catch((err) => console.warn('Supabase staff sync warning:', err));
+
+    corporateService.getClockRecords(currentInstitution.id).then((clocks) => {
+      if (clocks && clocks.length > 0) setClockRecords(clocks);
+    }).catch((err) => console.warn('Supabase clocks sync warning:', err));
+
+    corporateService.getPayrollRecords(currentInstitution.id).then((payrolls) => {
+      if (payrolls && payrolls.length > 0) setPayrollRecords(payrolls);
+    }).catch((err) => console.warn('Supabase payroll sync warning:', err));
+
+    // 6. Students
+    studentService.getByInstitution(currentInstitution.id).then((stus) => {
+      if (stus && stus.length > 0) setStudents(stus);
+    }).catch((err) => console.warn('Supabase students sync warning:', err));
+  }, [currentInstitution?.id]);
 
   // Sync to localStorage
   useEffect(() => {
@@ -320,6 +452,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const signOut = async () => {
+    try {
+      await authService.signOut();
+    } catch (err) {
+      console.warn('Error signing out:', err);
+    }
+    setCurrentUser(DEMO_USERS[0]);
+  };
+
   // Institution Registration
   const registerInstitution = (
     instData: Omit<Institution, 'id' | 'status' | 'submittedAt' | 'totalMembers'>
@@ -346,6 +487,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ...prev,
     ]);
 
+    // Async persist to live Supabase backend
+    if (isSupabaseConfigured()) {
+      institutionService.create(instData).then((persisted) => {
+        if (persisted) {
+          setInstitutions((prev) => prev.map((i) => (i.id === newInst.id ? persisted : i)));
+        }
+      }).catch(console.error);
+    }
+
     return newInst;
   };
 
@@ -362,18 +512,30 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           : i
       )
     );
+
+    if (isSupabaseConfigured()) {
+      institutionService.updateStatus(id, 'Active', notes).catch(console.error);
+    }
   };
 
   const rejectInstitution = (id: string, reason: string) => {
     setInstitutions((prev) =>
       prev.map((i) => (i.id === id ? { ...i, status: 'Rejected', rejectionReason: reason } : i))
     );
+
+    if (isSupabaseConfigured()) {
+      institutionService.updateStatus(id, 'Rejected', undefined, reason).catch(console.error);
+    }
   };
 
   const suspendInstitution = (id: string, reason: string) => {
     setInstitutions((prev) =>
       prev.map((i) => (i.id === id ? { ...i, status: 'Suspended', rejectionReason: reason } : i))
     );
+
+    if (isSupabaseConfigured()) {
+      institutionService.updateStatus(id, 'Suspended', undefined, reason).catch(console.error);
+    }
   };
 
   const inviteMember = (memberData: Omit<UserProfile, 'id' | 'status'>) => {
@@ -402,6 +564,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       status: 'Present',
     };
     setClockRecords((prev) => [newRecord, ...prev]);
+
+    if (isSupabaseConfigured() && staff) {
+      corporateService.clockIn(currentInstitution.id, employeeId, staff.fullName, workMode).catch(console.error);
+    }
   };
 
   const clockOutEmployee = (recordId: string) => {
@@ -409,6 +575,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setClockRecords((prev) =>
       prev.map((r) => (r.id === recordId ? { ...r, clockOutTime: nowTime, durationHours: 8.5 } : r))
     );
+
+    if (isSupabaseConfigured()) {
+      corporateService.clockOut(recordId, 8.5).catch(console.error);
+    }
   };
 
   const addHoliday = (holidayData: Omit<HolidayItem, 'id' | 'institutionId'>) => {
@@ -428,6 +598,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       publishedDate: new Date().toISOString().substring(0, 10),
     };
     setCirculars((prev) => [newCirc, ...prev]);
+
+    if (isSupabaseConfigured()) {
+      governmentService.createCircular(newCirc).catch(console.error);
+    }
   };
 
   const createFileRecord = (fileData: Omit<FileTrackingRecord, 'id' | 'institutionId' | 'lastMovedAt'>) => {
@@ -453,6 +627,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           : f
       )
     );
+
+    if (isSupabaseConfigured()) {
+      governmentService.moveFileDesk(fileId, nextDesk, remarks).catch(console.error);
+    }
   };
 
   const addStudent = (studentData: Omit<Student, 'id' | 'studentId' | 'attendanceRate'>) => {
@@ -464,6 +642,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       attendanceRate: 85.0,
     };
     setStudents((prev) => [newStudent, ...prev]);
+
+    if (isSupabaseConfigured()) {
+      studentService.create(studentData).catch(console.error);
+    }
   };
 
   const updateStudent = (id: string, updates: Partial<Student>) => {
@@ -489,6 +671,20 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       id: `room-${Date.now()}`,
     };
     setClassrooms((prev) => [...prev, newRoom]);
+
+    if (isSupabaseConfigured()) {
+      classroomService
+        .create({
+          ...roomData,
+          institutionId: currentInstitution.id,
+        })
+        .then((persisted) => {
+          if (persisted) {
+            setClassrooms((prev) => prev.map((r) => (r.id === newRoom.id ? persisted : r)));
+          }
+        })
+        .catch(console.error);
+    }
   };
 
   const addTimetableSlot = (slotData: Omit<TimetableSlot, 'id'>) => {
@@ -526,19 +722,43 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       id: `tt-${Date.now()}`,
     };
     setTimetable((prev) => [...prev, newSlot]);
+
+    if (isSupabaseConfigured()) {
+      timetableService
+        .createSlot({
+          ...slotData,
+          institutionId: currentInstitution.id,
+        })
+        .then((res) => {
+          if (res.slot) {
+            setTimetable((prev) => prev.map((s) => (s.id === newSlot.id ? res.slot! : s)));
+          }
+        })
+        .catch(console.error);
+    }
+
     return { success: true };
   };
 
   const markAttendance = (recordData: Omit<AttendanceRecord, 'id' | 'timestamp'>) => {
     const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
-    setAttendance((prev) => [
-      {
-        ...recordData,
-        id: `att-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-        timestamp,
-      },
-      ...prev,
-    ]);
+    const newRecord: AttendanceRecord = {
+      ...recordData,
+      id: `att-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+      timestamp,
+    };
+    setAttendance((prev) => [newRecord, ...prev]);
+
+    if (isSupabaseConfigured()) {
+      attendanceService
+        .bulkMark([
+          {
+            ...recordData,
+            institutionId: currentInstitution.id,
+          },
+        ])
+        .catch(console.error);
+    }
   };
 
   const bulkMarkAttendance = (records: Omit<AttendanceRecord, 'id' | 'timestamp'>[]) => {
@@ -556,6 +776,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
       return Array.from(map.values());
     });
+
+    if (isSupabaseConfigured() && records.length > 0) {
+      attendanceService.bulkMark(
+        records.map((r) => ({ ...r, institutionId: currentInstitution.id }))
+      ).catch(console.error);
+    }
   };
 
   const addAssignment = (asgData: Omit<Assignment, 'id' | 'submissionCount' | 'status'>) => {
@@ -609,12 +835,28 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const createInvoice = (invData: Omit<FeeInvoice, 'id' | 'invoiceNumber'>) => {
+    const invoiceNumber = `INV-2024-${Math.floor(1000 + Math.random() * 9000)}`;
     const newInv: FeeInvoice = {
       ...invData,
       id: `inv-${Date.now()}`,
-      invoiceNumber: `INV-2024-${Math.floor(1000 + Math.random() * 9000)}`,
+      invoiceNumber,
     };
     setInvoices((prev) => [newInv, ...prev]);
+
+    if (isSupabaseConfigured()) {
+      financeService
+        .createInvoice({
+          ...invData,
+          invoiceNumber,
+          institutionId: currentInstitution.id,
+        })
+        .then((persisted) => {
+          if (persisted) {
+            setInvoices((prev) => prev.map((i) => (i.id === newInv.id ? persisted : i)));
+          }
+        })
+        .catch(console.error);
+    }
   };
 
   const payInvoice = (
@@ -662,6 +904,61 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       receiptNumber: `RCPT-${Date.now().toString().slice(-6)}`,
     };
     setTransactions((prev) => [newTxn, ...prev]);
+
+    if (isSupabaseConfigured()) {
+      financeService.recordPayment(invoiceId, amount, paymentMethod, transactionId).catch(console.error);
+    }
+  };
+
+  const processPayroll = (recordId: string, paymentRef?: string) => {
+    const ref = paymentRef || `BANK-DISB-${Date.now().toString().slice(-6)}`;
+    const today = new Date().toISOString().split('T')[0];
+
+    setPayrollRecords((prev) =>
+      prev.map((p) =>
+        p.id === recordId
+          ? {
+              ...p,
+              status: 'Paid',
+              paymentDate: today,
+              paymentRef: ref,
+            }
+          : p
+      )
+    );
+
+    if (isSupabaseConfigured()) {
+      corporateService.updatePayrollStatus(recordId, 'Paid', ref).catch(console.error);
+    }
+  };
+
+  const addPayrollRecord = (recordData: Omit<PayrollRecord, 'id' | 'institutionId'>) => {
+    const newPayroll: PayrollRecord = {
+      ...recordData,
+      id: `pay-${Date.now()}`,
+      institutionId: currentInstitution.id,
+    };
+    setPayrollRecords((prev) => [newPayroll, ...prev]);
+
+    if (isSupabaseConfigured()) {
+      corporateService
+        .createPayroll({
+          ...recordData,
+          institutionId: currentInstitution.id,
+        })
+        .then((persisted) => {
+          if (persisted) {
+            setPayrollRecords((prev) => prev.map((p) => (p.id === newPayroll.id ? persisted : p)));
+          }
+        })
+        .catch(console.error);
+    }
+  };
+
+  const addSubject = (subject: string) => {
+    if (subject.trim() && !subjects.includes(subject.trim())) {
+      setSubjects((prev) => [...prev, subject.trim()]);
+    }
   };
 
   const addAnnouncement = (ancData: Omit<Announcement, 'id' | 'publishedAt' | 'readCount'>) => {
@@ -774,9 +1071,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <StoreContext.Provider
       value={{
+        isSupabaseLive,
         currentUser,
         setCurrentUser,
         switchRole,
+        signOut,
         institutions,
         currentInstitution,
         setCurrentInstitution,
@@ -791,6 +1090,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         clockInEmployee,
         clockOutEmployee,
         payrollRecords,
+        processPayroll,
+        addPayrollRecord,
         holidays,
         addHoliday,
         circulars,
@@ -798,6 +1099,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         fileTracking,
         createFileRecord,
         moveFileDesk,
+        subjects,
+        addSubject,
         students,
         addStudent,
         updateStudent,

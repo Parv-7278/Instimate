@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 export const TimetableModule: React.FC = () => {
-  const { timetable, addTimetableSlot, classrooms, faculty } = useStore();
+  const { timetable, addTimetableSlot, classrooms, faculty, subjects, addSubject } = useStore();
 
   const [selectedClass, setSelectedClass] = useState('Class 10-A');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -26,7 +26,7 @@ export const TimetableModule: React.FC = () => {
   const [slotData, setSlotData] = useState({
     day: 'Monday' as const,
     timeSlot: '8:00 AM - 9:00 AM',
-    subject: 'Math',
+    subject: subjects[0] || 'Mathematics',
     facultyId: faculty[0]?.id || '',
     facultyName: faculty[0]?.fullName || '',
     classroom: classrooms[0]?.roomNumber || '',
@@ -69,6 +69,10 @@ export const TimetableModule: React.FC = () => {
     if (!res.success) {
       setConflictError(res.conflictMessage || 'Timetable scheduling conflict detected!');
       return;
+    }
+
+    if (slotData.subject) {
+      addSubject(slotData.subject);
     }
 
     setIsAddModalOpen(false);
@@ -251,11 +255,17 @@ export const TimetableModule: React.FC = () => {
                 <input
                   type="text"
                   required
+                  list="subjects-list"
                   value={slotData.subject}
                   onChange={(e) => setSlotData({ ...slotData, subject: e.target.value })}
                   className="w-full rounded-lg border border-slate-200 p-2 text-xs"
-                  placeholder="e.g. Chemistry, Robotics"
+                  placeholder="e.g. Mathematics, Chemistry, Robotics"
                 />
+                <datalist id="subjects-list">
+                  {subjects.map((sub) => (
+                    <option key={sub} value={sub} />
+                  ))}
+                </datalist>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
