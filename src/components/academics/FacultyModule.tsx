@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useStore } from '@/lib/storeContext';
 import { Faculty } from '@/types';
+import { getRandomAvatar } from '@/lib/utils';
 import {
   Users,
   Plus,
@@ -51,7 +52,7 @@ export const FacultyModule: React.FC = () => {
       ...newFac,
       subjects: newFac.subjects.split(',').map((s) => s.trim()),
       assignedClasses: newFac.assignedClasses.split(',').map((c) => c.trim()),
-      avatarUrl: `https://images.unsplash.com/photo-${1500000000000 + Math.floor(Math.random() * 900000)}?w=150`,
+      avatarUrl: getRandomAvatar(),
     });
 
     setIsAddModalOpen(false);
@@ -110,6 +111,9 @@ export const FacultyModule: React.FC = () => {
                 <img
                   src={fac.avatarUrl}
                   alt={fac.fullName}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
+                  }}
                   className="h-14 w-14 rounded-2xl object-cover ring-2 ring-teal-500/20 shadow-xs"
                 />
                 <div>

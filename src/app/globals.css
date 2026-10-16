@@ -32,6 +32,21 @@ body {
   background: #94a3b8;
 }
 
+/* Hide scrollbar for clean horizontal nav strips */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Smooth momentum scrolling for mobile */
+.scroll-touch {
+  -webkit-overflow-scrolling: touch;
+}
+
+
 /* Print Styles for ID Cards, Report Cards and Receipts */
 @media print {
   body * {

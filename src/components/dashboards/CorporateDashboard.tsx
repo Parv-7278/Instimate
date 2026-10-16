@@ -18,6 +18,8 @@ import {
   ArrowRight,
   TrendingUp,
 } from 'lucide-react';
+import { handleHorizontalWheel } from '@/lib/utils';
+
 
 export const CorporateDashboard: React.FC = () => {
   const {
@@ -78,10 +80,13 @@ export const CorporateDashboard: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 text-xs font-semibold overflow-x-auto">
+      <div
+        onWheel={handleHorizontalWheel}
+        className="flex items-center gap-2 border-b border-slate-200 pb-2 text-xs font-semibold overflow-x-auto scrollbar-none scroll-touch whitespace-nowrap"
+      >
         <button
           onClick={() => setActiveTab('overview')}
-          className={`px-3 py-1.5 rounded-lg transition ${
+          className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap shrink-0 ${
             activeTab === 'overview' ? 'bg-indigo-600 text-white shadow-2xs' : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
@@ -89,7 +94,7 @@ export const CorporateDashboard: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('clock')}
-          className={`px-3 py-1.5 rounded-lg transition ${
+          className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap shrink-0 ${
             activeTab === 'clock' ? 'bg-indigo-600 text-white shadow-2xs' : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
@@ -97,7 +102,7 @@ export const CorporateDashboard: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('employees')}
-          className={`px-3 py-1.5 rounded-lg transition ${
+          className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap shrink-0 ${
             activeTab === 'employees' ? 'bg-indigo-600 text-white shadow-2xs' : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
@@ -105,7 +110,7 @@ export const CorporateDashboard: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('payroll')}
-          className={`px-3 py-1.5 rounded-lg transition ${
+          className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap shrink-0 ${
             activeTab === 'payroll' ? 'bg-indigo-600 text-white shadow-2xs' : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
@@ -113,13 +118,14 @@ export const CorporateDashboard: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('holidays')}
-          className={`px-3 py-1.5 rounded-lg transition ${
+          className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap shrink-0 ${
             activeTab === 'holidays' ? 'bg-indigo-600 text-white shadow-2xs' : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
           Paid Company Holidays ({holidays.length})
         </button>
       </div>
+
 
       {/* Overview Tab */}
       {activeTab === 'overview' && (
@@ -195,8 +201,8 @@ export const CorporateDashboard: React.FC = () => {
             <span className="text-xs text-slate-400">{clockRecords.length} Records</span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div onWheel={handleHorizontalWheel} className="overflow-x-auto scroll-touch">
+            <table className="w-full min-w-[700px] text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider text-[10px]">
                   <th className="py-3 px-4">Employee</th>
@@ -273,8 +279,8 @@ export const CorporateDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div onWheel={handleHorizontalWheel} className="overflow-x-auto scroll-touch">
+            <table className="w-full min-w-[700px] text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider text-[10px]">
                   <th className="py-3 px-4">Employee</th>

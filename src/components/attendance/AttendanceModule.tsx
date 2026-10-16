@@ -15,6 +15,8 @@ import {
   Save,
   Check,
 } from 'lucide-react';
+import { handleHorizontalWheel } from '@/lib/utils';
+
 
 export const AttendanceModule: React.FC = () => {
   const { students, attendance, markAttendance, bulkMarkAttendance, currentUser } = useStore();
@@ -94,7 +96,9 @@ export const AttendanceModule: React.FC = () => {
     a.href = url;
     a.download = `Attendance_${selectedClass}_${attendanceDate}.csv`;
     a.click();
+    setTimeout(() => window.URL.revokeObjectURL(url), 200);
   };
+
 
   return (
     <div className="space-y-6">
@@ -240,8 +244,8 @@ export const AttendanceModule: React.FC = () => {
       </div>
 
       {/* Bulk Shortcut Actions */}
-      <div className="flex items-center justify-between bg-slate-100/70 p-3 rounded-xl border border-slate-200 text-xs">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-100/70 p-3 rounded-xl border border-slate-200 text-xs">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="font-semibold text-slate-700">Bulk Quick Actions:</span>
           <button
             onClick={() => handleMarkAll('Present')}
@@ -264,7 +268,9 @@ export const AttendanceModule: React.FC = () => {
 
       {/* Roster Roll-Call Table */}
       <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden printable-area">
-        <table className="w-full text-left text-xs border-collapse">
+        <div onWheel={handleHorizontalWheel} className="overflow-x-auto scroll-touch">
+          <table className="w-full min-w-[650px] text-left text-xs border-collapse">
+
           <thead>
             <tr className="bg-slate-50 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider text-[10px]">
               <th className="py-3 px-4 w-20 text-center">Roll No</th>
@@ -376,7 +382,10 @@ export const AttendanceModule: React.FC = () => {
             })}
           </tbody>
         </table>
+        </div>
+
       </div>
     </div>
   );
 };
+

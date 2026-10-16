@@ -17,6 +17,8 @@ import {
   ArrowLeft,
   Compass,
 } from 'lucide-react';
+import { handleHorizontalWheel } from '@/lib/utils';
+
 
 interface NavbarProps {
   activeTab: string;
@@ -68,6 +70,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
+  const isCorporate = currentInstitution.type === 'corporate' || currentInstitution.type === 'public_sector';
+  const isGovernment = currentInstitution.type === 'government';
+
   const topTabs = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'eventroute', label: 'EventRoute' },
@@ -79,11 +84,53 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'exams', label: 'Reports' },
   ];
 
+  const allMobileTabs = isCorporate
+    ? [
+        { id: 'dashboard', label: 'Workspace' },
+        { id: 'eventroute', label: 'EventRoute' },
+        { id: 'students', label: 'Directory' },
+        { id: 'attendance', label: 'Attendance' },
+        { id: 'finance', label: 'Payroll' },
+        { id: 'leave', label: 'Leave' },
+        { id: 'announcements', label: 'Notices' },
+        { id: 'integrations', label: 'Integrations' },
+        { id: 'settings', label: 'Settings' },
+      ]
+    : isGovernment
+    ? [
+        { id: 'dashboard', label: 'Secretariat' },
+        { id: 'eventroute', label: 'EventRoute' },
+        { id: 'students', label: 'Officers' },
+        { id: 'attendance', label: 'Duty' },
+        { id: 'announcements', label: 'Circulars' },
+        { id: 'leave', label: 'Sanctions' },
+        { id: 'finance', label: 'Treasury' },
+        { id: 'integrations', label: 'Govt APIs' },
+        { id: 'settings', label: 'Settings' },
+      ]
+    : [
+        { id: 'dashboard', label: 'Dashboard' },
+        { id: 'eventroute', label: 'EventRoute' },
+        { id: 'students', label: 'Students' },
+        { id: 'faculty', label: 'Teachers' },
+        { id: 'classes', label: 'Classes' },
+        { id: 'attendance', label: 'Attendance' },
+        { id: 'timetable', label: 'Timetable' },
+        { id: 'exams', label: 'Reports' },
+        { id: 'assignments', label: 'Assignments' },
+        { id: 'finance', label: 'Finance' },
+        { id: 'announcements', label: 'Notices' },
+        { id: 'leave', label: 'Staff Leaves' },
+        { id: 'library', label: 'Library' },
+        { id: 'integrations', label: 'Integrations' },
+        { id: 'settings', label: 'Settings' },
+      ];
+
   return (
     <header className="sticky top-0 z-40 w-full bg-gradient-to-r from-[#0a4d5a] via-[#0d6474] to-[#117688] text-white shadow-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand / Logo */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           {onExitToGateway && (
             <button
               onClick={onExitToGateway}
@@ -98,10 +145,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => setActiveTab('dashboard')}
             className="flex items-center gap-2.5 text-left transition hover:opacity-90"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur-md border border-white/20 shadow-inner">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur-md border border-white/20 shadow-inner shrink-0">
               <Building2 className="h-5 w-5 text-cyan-200" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-xl font-bold tracking-tight text-white font-sans">
                   Institution<span className="text-cyan-300">Hub</span>
@@ -121,22 +168,25 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-teal-100/80 hidden md:block">
+              <p className="text-[11px] text-teal-100/80 hidden md:block truncate max-w-[200px]">
                 {currentInstitution.name}
               </p>
             </div>
           </button>
         </div>
 
-        {/* Center Navigation Tabs */}
-        <nav className="hidden lg:flex items-center space-x-1">
+        {/* Center Navigation Tabs - Contained with independent horizontal scroll */}
+        <nav
+          onWheel={handleHorizontalWheel}
+          className="hidden lg:flex items-center space-x-1 overflow-x-auto min-w-0 max-w-md xl:max-w-xl 2xl:max-w-2xl scrollbar-none scroll-touch py-1 mx-2"
+        >
           {topTabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative px-4 py-2 text-sm font-medium transition-all duration-150 rounded-lg ${
+                className={`relative px-3.5 py-1.5 text-xs font-medium transition-all duration-150 rounded-lg whitespace-nowrap shrink-0 ${
                   isActive
                     ? 'text-white font-semibold bg-white/15 shadow-sm'
                     : 'text-teal-100 hover:text-white hover:bg-white/10'
@@ -152,7 +202,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </nav>
 
         {/* Right Section: Quick Switchers, Alerts & Profile */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <button
             onClick={() => setActiveTab('eventroute')}
             className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition border ${
@@ -165,6 +215,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Compass className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">EventRoute</span>
           </button>
+
 
           {onOpenSearch && (
             <button
@@ -382,6 +433,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               <img
                 src={currentUser.avatarUrl || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'}
                 alt={currentUser.fullName}
+                onError={(e: any) => {
+                  e.currentTarget.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150';
+                }}
                 className="h-8.5 w-8.5 rounded-full object-cover ring-2 ring-white/30"
               />
               <ChevronDown className="h-3.5 w-3.5 opacity-70" />
@@ -437,6 +491,43 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Mobile/Tablet Horizontal Scrollable Sub-Navigation Bar */}
+      <nav
+        onWheel={handleHorizontalWheel}
+        className="lg:hidden flex items-center gap-1.5 overflow-x-auto px-3 sm:px-4 py-2 bg-[#08424e] border-t border-teal-600/30 text-xs font-medium scrollbar-none scroll-touch whitespace-nowrap"
+      >
+        {allMobileTabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition shrink-0 ${
+                isActive
+                  ? 'bg-white text-slate-900 shadow-sm font-bold'
+                  : 'text-teal-100 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Outside click dismiss overlay for open menus */}
+      {(roleMenuOpen || notifMenuOpen || instMenuOpen || profileMenuOpen) && (
+        <div
+          className="fixed inset-0 z-30 bg-transparent"
+          onClick={() => {
+            setRoleMenuOpen(false);
+            setNotifMenuOpen(false);
+            setInstMenuOpen(false);
+            setProfileMenuOpen(false);
+          }}
+        />
+      )}
     </header>
   );
 };
+

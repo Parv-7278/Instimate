@@ -218,25 +218,25 @@ function MainAppContent() {
       />
 
       {/* Main Layout Area */}
-      <div className="flex-1 flex max-w-7xl w-full mx-auto">
+      <div className="flex-1 flex max-w-7xl w-full mx-auto min-w-0">
         {/* Left Sidebar */}
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {/* Dynamic Main Workspace */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 min-w-0 overflow-y-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 min-w-0">
           {renderActiveModule()}
         </main>
       </div>
 
       {/* Floating Bottom Quick Bar for Navigation Switching */}
-      <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2">
+      <div className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-40 flex items-center gap-1.5 sm:gap-2 max-w-[calc(100vw-1.5rem)] overflow-x-auto scrollbar-none py-1">
         <button
           onClick={() => setCurrentView('gateway')}
-          className="flex items-center gap-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2 text-xs font-semibold shadow-lg ring-1 ring-white/20 transition"
+          className="flex items-center gap-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800 text-white px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-semibold shadow-lg ring-1 ring-white/20 transition shrink-0 backdrop-blur-xs"
           title="Return to Universal Institution Gateway"
         >
           <Building2 className="h-3.5 w-3.5 text-cyan-400" />
-          <span>Universal Gateway</span>
+          <span className="hidden xs:inline sm:inline">Gateway</span>
         </button>
 
         <button
@@ -244,22 +244,23 @@ function MainAppContent() {
             switchRole('super_admin');
             setCurrentView('superadmin');
           }}
-          className="flex items-center gap-1.5 rounded-full bg-purple-900 hover:bg-purple-800 text-white px-3.5 py-2 text-xs font-semibold shadow-lg ring-1 ring-white/20 transition"
+          className="flex items-center gap-1.5 rounded-full bg-purple-900/90 hover:bg-purple-800 text-white px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-semibold shadow-lg ring-1 ring-white/20 transition shrink-0 backdrop-blur-xs"
           title="Super Admin Verification Dashboard"
         >
           <ShieldAlert className="h-3.5 w-3.5 text-purple-300" />
-          <span>Super Admin</span>
+          <span className="hidden xs:inline sm:inline">Super Admin</span>
         </button>
 
         <button
           onClick={() => setCurrentView('landing')}
-          className="flex items-center gap-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 text-xs font-semibold shadow-lg ring-1 ring-white/10 transition"
+          className="flex items-center gap-1.5 rounded-full bg-slate-800/90 hover:bg-slate-700 text-white px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-semibold shadow-lg ring-1 ring-white/10 transition shrink-0 backdrop-blur-xs"
           title="View Public SaaS Marketing Showcase"
         >
           <Globe className="h-3.5 w-3.5 text-emerald-400" />
-          <span>Landing Page</span>
+          <span className="hidden xs:inline sm:inline">Landing</span>
         </button>
       </div>
+
 
       {/* Global Cmd+K Search Modal */}
       <GlobalSearchModal

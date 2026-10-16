@@ -90,7 +90,12 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
     : [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/50 p-4 backdrop-blur-xs animate-in fade-in">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/50 p-4 backdrop-blur-xs animate-in fade-in"
+    >
       <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden border border-slate-200">
         <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100">
           <Search className="h-5 w-5 text-teal-600 shrink-0" />

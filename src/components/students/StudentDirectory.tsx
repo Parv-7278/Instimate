@@ -21,6 +21,8 @@ import {
   Printer,
   ChevronDown,
 } from 'lucide-react';
+import { handleHorizontalWheel, getRandomAvatar } from '@/lib/utils';
+
 
 export const StudentDirectory: React.FC = () => {
   const { students, addStudent, updateStudent, deleteStudent, invoices, examResults } = useStore();
@@ -86,7 +88,7 @@ export const StudentDirectory: React.FC = () => {
     if (!formData.fullName || !formData.rollNo) return;
     addStudent({
       ...formData,
-      avatarUrl: `https://images.unsplash.com/photo-${1500000000000 + Math.floor(Math.random() * 900000)}?w=150`,
+      avatarUrl: getRandomAvatar(),
     });
     setIsAddModalOpen(false);
     setFormData({
@@ -127,6 +129,7 @@ export const StudentDirectory: React.FC = () => {
     a.href = url;
     a.download = `Institution_Hub_Students_${Date.now()}.csv`;
     a.click();
+    setTimeout(() => window.URL.revokeObjectURL(url), 200);
   };
 
   return (
@@ -209,8 +212,9 @@ export const StudentDirectory: React.FC = () => {
 
       {/* Students Data Table */}
       <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        <div onWheel={handleHorizontalWheel} className="overflow-x-auto scroll-touch">
+          <table className="w-full min-w-[750px] text-left text-xs border-collapse">
+
             <thead>
               <tr className="bg-slate-50 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider text-[10px]">
                 <th className="py-3.5 px-4">Student</th>
@@ -239,6 +243,9 @@ export const StudentDirectory: React.FC = () => {
                           <img
                             src={stu.avatarUrl}
                             alt={stu.fullName}
+                            onError={(e: any) => {
+                              e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
+                            }}
                             className="h-9 w-9 rounded-full object-cover ring-1 ring-slate-200"
                           />
                           <div>
@@ -352,13 +359,21 @@ export const StudentDirectory: React.FC = () => {
                   <h3 className="font-bold text-sm text-slate-900">
                     Official Student Smart ID Card
                   </h3>
-                  <button
-                    onClick={() => window.print()}
-                    className="no-print flex items-center gap-1.5 rounded-lg bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-100"
-                  >
-                    <Printer className="h-3.5 w-3.5" />
-                    <span>Print ID Card</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowIdCard(false)}
+                      className="no-print rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                    >
+                      View Full Profile
+                    </button>
+                    <button
+                      onClick={() => window.print()}
+                      className="no-print flex items-center gap-1.5 rounded-lg bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-100 transition"
+                    >
+                      <Printer className="h-3.5 w-3.5" />
+                      <span>Print ID Card</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="mx-auto w-full max-w-sm rounded-2xl bg-gradient-to-br from-[#0a4d5a] to-[#127d91] p-5 text-white shadow-xl border-4 border-white">

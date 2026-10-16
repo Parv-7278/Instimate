@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useStore } from '@/lib/storeContext';
 import { StudentExamResult } from '@/types';
+import { handleHorizontalWheel } from '@/lib/utils';
 import {
   FileSpreadsheet,
   Award,
@@ -191,8 +192,8 @@ export const ExamsModule: React.FC = () => {
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        <div onWheel={handleHorizontalWheel} className="overflow-x-auto scroll-touch">
+          <table className="w-full min-w-[850px] text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-50 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider text-[10px]">
                 <th className="py-3 px-4">Rank</th>

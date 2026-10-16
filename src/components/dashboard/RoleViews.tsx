@@ -29,8 +29,17 @@ export const StudentDashboardView: React.FC<RoleDashboardProps> = ({
 }) => {
   const { students, assignments, invoices, examResults, timetable } = useStore();
 
-  // Pick Aarav Patel (STU-2024-001) as current student demo
-  const student = students[0];
+  // Pick Aarav Patel (STU-2024-001) as current student demo, with safe fallback
+  const student = students[0] || {
+    id: 'demo-student',
+    fullName: 'Aarav Patel',
+    rollNo: '001',
+    classId: 'Class 10-A',
+    course: 'General Sciences',
+    studentId: 'STU-2024-001',
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+    attendanceRate: 92,
+  };
   const studentInvoices = invoices.filter((i) => i.studentId === student?.id || i.status !== 'Paid');
   const studentResults = examResults.filter((r) => r.studentId === student?.id && r.status === 'Published');
   const pendingAssignments = assignments.filter((a) => a.classId === student?.classId);
@@ -43,6 +52,9 @@ export const StudentDashboardView: React.FC<RoleDashboardProps> = ({
           <img
             src={student.avatarUrl}
             alt={student.fullName}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
+            }}
             className="h-16 w-16 rounded-2xl object-cover ring-4 ring-white/20 shadow-md"
           />
           <div>
@@ -228,7 +240,14 @@ export const StudentDashboardView: React.FC<RoleDashboardProps> = ({
 
 export const FacultyDashboardView: React.FC<RoleDashboardProps> = ({ onNavigateTab }) => {
   const { faculty, assignments, submissions, timetable } = useStore();
-  const currentFac = faculty[0]; // Prof. Ananya Sharma
+  const currentFac = faculty[0] || {
+    id: 'demo-faculty',
+    fullName: 'Prof. Ananya Sharma',
+    designation: 'Assistant Professor',
+    department: 'Computer Science',
+    assignedClasses: ['Class 10-A'],
+    subjects: ['Data Structures'],
+  };
 
   const pendingGrading = submissions.filter((s) => s.status !== 'Graded');
 

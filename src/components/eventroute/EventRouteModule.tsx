@@ -21,6 +21,8 @@ import {
   Search,
   BookOpen,
 } from 'lucide-react';
+import { handleHorizontalWheel } from '@/lib/utils';
+
 
 type SubView = 'map' | 'itinerary' | 'navigation' | 'sessions';
 
@@ -95,7 +97,10 @@ function EventRouteContent() {
         </div>
 
         {/* Sub-Navigation Tabs */}
-        <div className="relative z-10 flex items-center gap-2 mt-6 pt-5 border-t border-white/10 overflow-x-auto pb-1">
+        <div
+          onWheel={handleHorizontalWheel}
+          className="relative z-10 flex items-center gap-2 mt-6 pt-5 border-t border-white/10 overflow-x-auto pb-1 scrollbar-none scroll-touch whitespace-nowrap"
+        >
           {[
             { id: 'map', label: 'Venue Map & Heatmap', icon: Map, badge: 'Live' },
             {
@@ -113,7 +118,7 @@ function EventRouteContent() {
               <button
                 key={tab.id}
                 onClick={() => setActiveSubView(tab.id as SubView)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 ${
                   isActive
                     ? 'bg-white text-slate-900 shadow-md'
                     : 'text-teal-100 hover:text-white hover:bg-white/10'

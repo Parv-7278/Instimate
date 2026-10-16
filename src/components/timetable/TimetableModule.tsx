@@ -14,6 +14,8 @@ import {
   X,
   Filter,
 } from 'lucide-react';
+import { handleHorizontalWheel } from '@/lib/utils';
+
 
 export const TimetableModule: React.FC = () => {
   const { timetable, addTimetableSlot, classrooms, faculty, subjects, addSubject } = useStore();
@@ -96,7 +98,7 @@ export const TimetableModule: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <select
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value)}
@@ -130,8 +132,12 @@ export const TimetableModule: React.FC = () => {
 
       {/* Timetable Weekly Grid (Matching mockup exact layout) */}
       <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm printable-area">
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <div
+          onWheel={handleHorizontalWheel}
+          className="overflow-x-auto rounded-xl border border-slate-200 scroll-touch"
+        >
           <table className="w-full min-w-[700px] border-collapse text-left text-xs">
+
             <thead>
               <tr className="bg-slate-100 text-slate-700 border-b border-slate-200">
                 <th className="py-3.5 px-4 font-bold w-40 text-center">Time</th>

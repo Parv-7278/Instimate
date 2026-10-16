@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useStore } from '@/lib/storeContext';
 import { LeaveRequest } from '@/types';
+import { handleHorizontalWheel } from '@/lib/utils';
 import {
   FileText,
   Plus,
@@ -80,8 +81,8 @@ export const LeaveManagement: React.FC = () => {
 
       {/* Leave Requests Table */}
       <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        <div onWheel={handleHorizontalWheel} className="overflow-x-auto scroll-touch">
+          <table className="w-full min-w-[700px] text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-50 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider text-[10px]">
                 <th className="py-3 px-4">Applicant</th>

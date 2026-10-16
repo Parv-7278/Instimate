@@ -75,6 +75,7 @@ export const ItineraryTimeline: React.FC<ItineraryTimelineProps> = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setTimeout(() => window.URL.revokeObjectURL(link.href), 200);
   };
 
   return (

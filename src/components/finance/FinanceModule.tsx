@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '@/lib/storeContext';
 import { FeeInvoice } from '@/types';
+import { handleHorizontalWheel } from '@/lib/utils';
 import {
   CreditCard,
   DollarSign,
@@ -47,6 +48,17 @@ export const FinanceModule: React.FC<FinanceModuleProps> = ({ initialInvoiceId }
   const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'Card' | 'NetBanking'>('UPI');
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSuccessReceipt, setPaymentSuccessReceipt] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (initialInvoiceId) {
+      const inv = invoices.find((i) => i.id === initialInvoiceId);
+      if (inv) {
+        setSelectedInvoice(inv);
+        setPaymentAmount(inv.dueAmount);
+        setPaymentSuccessReceipt(null);
+      }
+    }
+  }, [initialInvoiceId, invoices]);
 
   // New Invoice Modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -232,8 +244,8 @@ export const FinanceModule: React.FC<FinanceModuleProps> = ({ initialInvoiceId }
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        <div onWheel={handleHorizontalWheel} className="overflow-x-auto scroll-touch">
+          <table className="w-full min-w-[750px] text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-50 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider text-[10px]">
                 <th className="py-3 px-4">Invoice #</th>

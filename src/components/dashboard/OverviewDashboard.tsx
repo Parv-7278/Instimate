@@ -15,6 +15,8 @@ import {
   Clock,
   Sparkles,
 } from 'lucide-react';
+import { handleHorizontalWheel } from '@/lib/utils';
+
 import {
   ResponsiveContainer,
   BarChart,
@@ -404,8 +406,12 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
         </div>
 
         {/* Timetable Schedule Grid Table (Exact copy of reference image!) */}
-        <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
+        <div
+          onWheel={handleHorizontalWheel}
+          className="mt-4 overflow-x-auto rounded-xl border border-slate-200 scroll-touch"
+        >
           <table className="w-full min-w-[650px] border-collapse text-left text-xs">
+
             <thead>
               <tr className="bg-slate-100/80 text-slate-700 border-b border-slate-200">
                 <th className="py-3 px-4 font-bold w-36 text-center">Time</th>

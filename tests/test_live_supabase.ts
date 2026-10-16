@@ -29,6 +29,8 @@ async function testLive() {
     'payroll_records',
     'fee_invoices',
     'payment_transactions',
+    'venue_rooms',
+    'event_sessions',
   ];
 
   for (const t of tables) {

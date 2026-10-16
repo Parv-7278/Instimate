@@ -19,6 +19,8 @@ import {
   X,
   AlertTriangle,
 } from 'lucide-react';
+import { handleHorizontalWheel } from '@/lib/utils';
+
 
 export const GovernmentDashboard: React.FC = () => {
   const {
@@ -104,10 +106,13 @@ export const GovernmentDashboard: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 text-xs font-semibold">
+      <div
+        onWheel={handleHorizontalWheel}
+        className="flex items-center gap-2 border-b border-slate-200 pb-2 text-xs font-semibold overflow-x-auto scrollbar-none scroll-touch whitespace-nowrap"
+      >
         <button
           onClick={() => setActiveTab('circulars')}
-          className={`px-3 py-1.5 rounded-lg transition ${
+          className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap shrink-0 ${
             activeTab === 'circulars' ? 'bg-slate-900 text-white shadow-2xs' : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
@@ -115,13 +120,14 @@ export const GovernmentDashboard: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('files')}
-          className={`px-3 py-1.5 rounded-lg transition ${
+          className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap shrink-0 ${
             activeTab === 'files' ? 'bg-slate-900 text-white shadow-2xs' : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
           E-File Movement & Sanctions ({fileTracking.length})
         </button>
       </div>
+
 
       {/* Circulars Tab */}
       {activeTab === 'circulars' && (
@@ -165,8 +171,8 @@ export const GovernmentDashboard: React.FC = () => {
             <span className="text-xs text-slate-400">{fileTracking.length} Files in Routing</span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div onWheel={handleHorizontalWheel} className="overflow-x-auto scroll-touch">
+            <table className="w-full min-w-[700px] text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider text-[10px]">
                   <th className="py-3 px-4">File Reference #</th>

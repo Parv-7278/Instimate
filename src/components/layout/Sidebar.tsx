@@ -78,7 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
       ];
 
   return (
-    <aside className="w-64 shrink-0 bg-white border-r border-slate-200/80 p-4 hidden md:flex flex-col justify-between min-h-[calc(100vh-4rem)]">
+    <aside className="w-64 shrink-0 bg-white border-r border-slate-200/80 p-4 hidden md:flex flex-col justify-between sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto scrollbar-none">
       <div className="space-y-6">
         {/* User Role & Institution Indicator Card */}
         <div className="rounded-xl bg-gradient-to-br from-slate-900 to-[#0e4d59] p-3.5 text-white shadow-sm">
