@@ -26,11 +26,21 @@ async function testLive() {
     'students',
     'attendance_records',
     'timetable_slots',
+    'corporate_staff',
+    'employee_clock_records',
     'payroll_records',
+    'holidays',
+    'government_circulars',
+    'file_tracking_records',
     'fee_invoices',
     'payment_transactions',
+    'announcements',
+    'leave_requests',
+    'library_books',
+    'support_tickets',
     'venue_rooms',
     'event_sessions',
+    'user_itineraries',
   ];
 
   for (const t of tables) {
